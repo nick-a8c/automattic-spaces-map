@@ -155,6 +155,16 @@ export class DotFieldEngine {
     this.resetSpring();
   }
 
+  /** Linear reveal playhead 0..1 on the global clock (elapsed·speed ÷ base duration, after the
+   * start delay). Not eased — it reads as a real timeline. 1 when the reveal isn't running. */
+  getProgress(): number {
+    if (this.cfg.intro !== "reveal") return 1;
+    const elapsed = performance.now() - this.introStart - this.cfg.rvDelay;
+    if (elapsed <= 0) return 0;
+    const p = (elapsed * this.cfg.rvSpeed) / DUR_BASE;
+    return p >= 1 ? 1 : p;
+  }
+
   /* ---------- land mask ---------- */
   private isLand(x: number, y: number): boolean {
     x = Math.round(x);

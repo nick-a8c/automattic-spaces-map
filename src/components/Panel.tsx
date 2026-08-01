@@ -5,7 +5,7 @@
 import { useState, type ReactNode } from "react";
 import type { Config } from "../engine/types";
 import type { Bezier } from "../engine/easing";
-import { Segmented, Slider, type Opt } from "./controls";
+import { Dial, Segmented, Slider, TimingBar, type Opt } from "./controls";
 import { BezierEditor } from "./BezierEditor";
 import { PresetBar } from "./PresetBar";
 
@@ -79,6 +79,7 @@ export interface PanelProps {
   onSurprise: () => void;
   loop: boolean;
   onToggleLoop: () => void;
+  getProgress: () => number;
 }
 
 export function Panel({
@@ -90,6 +91,7 @@ export function Panel({
   onSurprise,
   loop,
   onToggleLoop,
+  getProgress,
 }: PanelProps) {
   const [copied, setCopied] = useState(false);
 
@@ -154,6 +156,7 @@ export function Panel({
 
       {/* ① timing */}
       <Section title="① Timing">
+      <TimingBar getProgress={getProgress} />
       <Slider
         label="Speed"
         min={0.25}
@@ -201,15 +204,7 @@ export function Panel({
       />
       {cfg.rvPattern === "sweep" ? (
         <>
-          <Slider
-            label="Direction"
-            min={0}
-            max={360}
-            step={15}
-            value={cfg.rvAngle}
-            onChange={(v) => update({ rvAngle: v })}
-            format={(v) => v + "°"}
-          />
+          <Dial label="Direction" value={cfg.rvAngle} step={15} onChange={(v) => update({ rvAngle: v })} />
           <Slider
             label="Stagger"
             min={0}

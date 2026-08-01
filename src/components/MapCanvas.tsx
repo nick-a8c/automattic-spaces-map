@@ -8,6 +8,7 @@ import type { Config } from "../engine/types";
 export interface MapHandle {
   replayIntro: () => void;
   getCanvas: () => HTMLCanvasElement | null;
+  getProgress: () => number;
 }
 
 export const MapCanvas = forwardRef<MapHandle, { cfg: Config; className?: string }>(
@@ -36,6 +37,7 @@ export const MapCanvas = forwardRef<MapHandle, { cfg: Config; className?: string
       () => ({
         replayIntro: () => engineRef.current?.replayIntro(),
         getCanvas: () => canvasRef.current,
+        getProgress: () => engineRef.current?.getProgress() ?? 1,
       }),
       [],
     );

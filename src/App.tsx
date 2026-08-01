@@ -156,6 +156,7 @@ export default function App() {
             onSurprise={surprise}
             loop={loop}
             onToggleLoop={() => setLoop((l) => !l)}
+            getProgress={() => mapRef.current?.getProgress() ?? 1}
           />
         </div>
       ) : (

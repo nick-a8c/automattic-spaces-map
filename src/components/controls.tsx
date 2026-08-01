@@ -1,6 +1,94 @@
 // Small reusable panel controls, styled by index.css (.group / .seg ...).
 
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+
+// Rotary dial for an angle (0..360). Drag around it; snaps to `step`. Reads/writes degrees —
+// a circle is more legible for a direction than a linear slider. Styled in .dial (index.css).
+export function Dial({
+  label,
+  value,
+  onChange,
+  step = 15,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+}) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const setFrom = (clientX: number, clientY: number) => {
+    const el = wrap.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    let ang = (Math.atan2(clientY - (r.top + r.height / 2), clientX - (r.left + r.width / 2)) * 180) / Math.PI + 90;
+    if (ang < 0) ang += 360;
+    let v = Math.round(ang / step) * step;
+    if (v >= 360) v -= 360;
+    onChange(v);
+  };
+
+  const R = 26;
+  const a = ((value - 90) * Math.PI) / 180;
+  const kx = 32 + Math.cos(a) * R;
+  const ky = 32 + Math.sin(a) * R;
+
+  return (
+    <div className="control dial-control">
+      <div
+        ref={wrap}
+        className="dial"
+        onPointerDown={(e) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setFrom(e.clientX, e.clientY);
+        }}
+        onPointerMove={(e) => dragging.current && setFrom(e.clientX, e.clientY)}
+        onPointerUp={() => (dragging.current = false)}
+        onPointerCancel={() => (dragging.current = false)}
+      >
+        <svg viewBox="0 0 64 64" className="dial-svg">
+          <circle className="dial-ring" cx={32} cy={32} r={R} />
+          <circle
+            className="dial-arc"
+            cx={32}
+            cy={32}
+            r={R}
+            pathLength={360}
+            transform="rotate(-90 32 32)"
+            style={{ strokeDasharray: `${value} 360` }}
+          />
+          <circle className="dial-knob" cx={kx} cy={ky} r={3.5} />
+        </svg>
+        <div className="dial-hub">
+          <b>{value}°</b>
+          <span>{label}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Live reveal playhead: a thin bar that fills in sync with the actual reveal (resets on replay,
+// tracks Speed/Delay). Runs its own rAF and writes width to a ref — no React state churn.
+export function TimingBar({ getProgress }: { getProgress: () => number }) {
+  const fill = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      if (fill.current) fill.current.style.width = (getProgress() * 100).toFixed(1) + "%";
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [getProgress]);
+  return (
+    <div className="revbar">
+      <div ref={fill} className="revbar-fill" />
+    </div>
+  );
+}
 
 export interface Opt {
   v: string;
