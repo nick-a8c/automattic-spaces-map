@@ -80,6 +80,9 @@ export interface PanelProps {
   loop: boolean;
   onToggleLoop: () => void;
   getProgress: () => number;
+  onOpenLooks: () => void;
+  onToggleTimeline: () => void;
+  timelineOn: boolean;
 }
 
 export function Panel({
@@ -92,6 +95,9 @@ export function Panel({
   loop,
   onToggleLoop,
   getProgress,
+  onOpenLooks,
+  onToggleTimeline,
+  timelineOn,
 }: PanelProps) {
   const [copied, setCopied] = useState(false);
 
@@ -126,6 +132,20 @@ export function Panel({
 
   return (
     <aside id="panel">
+      {/* views — the animated Looks gallery + the docked Timeline; the panel is "Expert" */}
+      <div className="view-launchers">
+        <button className="btn looks-launch" onClick={onOpenLooks}>
+          ◱ Browse looks
+        </button>
+        <button
+          className={timelineOn ? "btn looks-launch tl-toggle on" : "btn looks-launch tl-toggle"}
+          onClick={onToggleTimeline}
+        >
+          ⊞ Timeline
+        </button>
+      </div>
+      <hr className="section" />
+
       {/* globals */}
       <Slider
         label="Canvas zoom"

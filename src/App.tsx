@@ -4,6 +4,9 @@ import { Panel } from "./components/Panel";
 import { MapCanvas, type MapHandle } from "./components/MapCanvas";
 import { ViewToggle, type View } from "./components/ViewToggle";
 import { SpacesPage } from "./site/SpacesPage";
+import { LooksGallery } from "./components/LooksGallery";
+import { Timeline } from "./components/Timeline";
+import type { Look } from "./looks";
 
 function makeInitialConfig(): Config {
   return { ...DEFAULT_CONFIG };
@@ -69,10 +72,20 @@ export default function App() {
   const [view, setView] = useState<View>("builder");
   const [recording, setRecording] = useState(false);
   const [loop, setLoop] = useState(false);
+  const [looksOpen, setLooksOpen] = useState(false);
+  const [activeLook, setActiveLook] = useState<string | null>(null);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const mapRef = useRef<MapHandle>(null);
   const recRef = useRef<MediaRecorder | null>(null);
 
   const update = (patch: Partial<Config>) => setCfg((c) => ({ ...c, ...patch }));
+
+  const pickLook = (look: Look) => {
+    update(look.patch);
+    setActiveLook(look.id);
+    mapRef.current?.replayIntro();
+    setLooksOpen(false);
+  };
 
   const surprise = () => {
     setCfg((c) => ({ ...c, ...surprisePatch(c) }));
@@ -139,13 +152,24 @@ export default function App() {
 
       {view === "builder" ? (
         <div className="builder-layout">
-          <div id="stage">
-            <div
-              id="mapwrap"
-              style={{ transform: `scale(${cfg.zoom})`, transformOrigin: "center center" }}
-            >
-              <MapCanvas ref={mapRef} cfg={cfg} />
+          <div id="stage-col">
+            <div id="stage">
+              <div
+                id="mapwrap"
+                style={{ transform: `scale(${cfg.zoom})`, transformOrigin: "center center" }}
+              >
+                <MapCanvas ref={mapRef} cfg={cfg} />
+              </div>
             </div>
+            {timelineOpen && (
+              <Timeline
+                cfg={cfg}
+                update={update}
+                getProgress={() => mapRef.current?.getProgress() ?? 1}
+                onReplay={() => mapRef.current?.replayIntro()}
+                onClose={() => setTimelineOpen(false)}
+              />
+            )}
           </div>
           <Panel
             cfg={cfg}
@@ -157,7 +181,17 @@ export default function App() {
             loop={loop}
             onToggleLoop={() => setLoop((l) => !l)}
             getProgress={() => mapRef.current?.getProgress() ?? 1}
+            onOpenLooks={() => setLooksOpen(true)}
+            onToggleTimeline={() => setTimelineOpen((o) => !o)}
+            timelineOn={timelineOpen}
           />
+          {looksOpen && (
+            <LooksGallery
+              onClose={() => setLooksOpen(false)}
+              onPick={pickLook}
+              activeId={activeLook}
+            />
+          )}
         </div>
       ) : (
         <SpacesPage cfg={cfg} mapRef={mapRef} />

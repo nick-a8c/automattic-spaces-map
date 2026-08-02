@@ -24,6 +24,28 @@ Dev-server launch config also exists as `dotted-world-map` in `.claude/launch.js
 - **Space** replays the Reveal (works in both views; ignored while typing in a field).
 - Bottom-left toggle flips **Builder ⇄ Site**.
 - **Copy settings** dumps the current `Config` as clean JSON (schema-exact).
+- **Looks** (panel top): a **"◱ Browse looks"** launcher opens a full-screen gallery
+  (`LooksGallery.tsx`) of 6 live animated preview tiles — Sweep / Corner spring / Decode / Bloom /
+  Cascade / Fade. Each tile loops a stylized grid reveal (per-look, own rAF; matches the panel's
+  minimal style, `#0387ff` accent — not the sandbox violet). Picking a tile applies that look's
+  reveal-only config bundle (`src/looks.ts` — all `rv*` + `intro`, but NOT globals gap/size/color/
+  bg/zoom, so a look changes the *motion*, not your dots), replays, and closes. `App` owns
+  `looksOpen` + `activeLook`; additive — the full 8-section "Expert" panel is unchanged below the
+  launcher. Tier 1 of the "Looks" motion-picker concept; the feel-pad + describe-it (see the
+  sandbox artifact) are the next possible slices. (Previous pill-strip `LooksBar.tsx` was replaced.)
+- **Timeline** (panel top → "⊞ Timeline" toggle): a docked motion-editor strip under the map
+  (`Timeline.tsx`; `App` owns `timelineOpen`, layout wraps map + dock in `#stage-col`). A real-time
+  axis (`AXIS = 8000` ms, ruler in seconds). Lanes:
+  - **Reveal** (master): block LEFT = global start delay (`rvDelay`), WIDTH = reveal duration
+    (`DUR_BASE / rvSpeed`); drag body → `rvDelay`, drag right edge → `rvSpeed`. Shows the sweep ease.
+  - **Opacity / Scale / Motion**: block starts at `rvDelay + trackDelay`, WIDTH = per-dot window
+    (`WIN_BASE / trackSpeed × revealDuration`), with the track's own bézier drawn inside (respects
+    `rvEaseLink` for opacity/scale). Drag body → `rv{…}Delay`; drag right edge → `rv{…}Speed`
+    (unlinks `rvSpeedLink` for opacity/scale so the edit applies).
+  - **Crest**: band travels with the front; drag horizontally → `rvCrestArea`.
+  Red playhead reflects the real reveal via `getProgress()` (absolute ms); the map is the live
+  preview. Additive + toggleable. (`DUR_BASE=3200`/`WIN_BASE=0.65` duplicated from the engine; a
+  fixed 8s axis means very slow reveals clamp at the right edge.)
 - **Presets** (panel footer): Save current / reload / delete looks (localStorage), or paste a
   settings JSON into the box and **Apply pasted** — for iterating without touching
   `DEFAULT_CONFIG`. (To change the shipped default, still paste into `DEFAULT_CONFIG` in
