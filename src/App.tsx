@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, type Config } from "./engine/types";
 import { Panel } from "./components/Panel";
 import { MapCanvas, type MapHandle } from "./components/MapCanvas";
 import { ViewToggle, type View } from "./components/ViewToggle";
-import { SpacesPage } from "./site/SpacesPage";
+import { SpacesPage, DEFAULT_MARKER_ANIM, type MarkerAnim } from "./site/SpacesPage";
 import { LooksGallery } from "./components/LooksGallery";
 import { Timeline } from "./components/Timeline";
 import type { Look } from "./looks";
@@ -75,6 +75,7 @@ export default function App() {
   const [looksOpen, setLooksOpen] = useState(false);
   const [activeLook, setActiveLook] = useState<string | null>(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [markerAnim, setMarkerAnim] = useState<MarkerAnim>(DEFAULT_MARKER_ANIM);
   const mapRef = useRef<MapHandle>(null);
   const recRef = useRef<MediaRecorder | null>(null);
 
@@ -194,7 +195,13 @@ export default function App() {
           )}
         </div>
       ) : (
-        <SpacesPage cfg={cfg} mapRef={mapRef} />
+        <SpacesPage
+          cfg={cfg}
+          mapRef={mapRef}
+          anim={markerAnim}
+          setAnim={setMarkerAnim}
+          onReplayMap={() => mapRef.current?.replayIntro()}
+        />
       )}
     </>
   );

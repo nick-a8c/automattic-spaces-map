@@ -85,6 +85,7 @@
 }
 .site-marker {
   position: absolute;
+  will-change: opacity, transform;
 }
 .site-marker-dot {
   position: absolute;
@@ -237,4 +238,44 @@ a {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+/* ---------- marker-animation panel (floats over the site preview) ---------- */
+.mk-panel {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 250px;
+  background: #fff;
+  border: 1px solid var(--panel-border, #e8e8ea);
+  border-radius: 12px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.16);
+  z-index: 200;
+  overflow: hidden;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+}
+.mk-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: #414141;
+}
+.mk-panel.collapsed .mk-panel-head {
+  padding: 11px 14px;
+}
+.mk-chev {
+  color: #8f8f8f;
+  font-size: 9px;
+}
+.mk-panel-body {
+  padding: 2px 14px 14px;
 }
