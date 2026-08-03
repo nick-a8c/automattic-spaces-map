@@ -35,16 +35,11 @@ function orderFor(id: string, c: Cell, seeds: Cell[]): number {
 
 function LookTile({ look, active, onPick }: { look: Look; active: boolean; onPick: () => void }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
-  const activeRef = useRef(active);
-  activeRef.current = active;
 
   useEffect(() => {
     const cv = ref.current;
     if (!cv) return;
     const ctx = cv.getContext("2d")!;
-    const cs = getComputedStyle(document.documentElement);
-    const dormant = cs.getPropertyValue("--track-empty").trim() || "#e1e1e1";
-    const ink = cs.getPropertyValue("--ink").trim() || "#16171a";
     const accent = "#0387ff";
 
     const cells: Cell[] = [];
@@ -68,18 +63,12 @@ function LookTile({ look, active, onPick }: { look: Look; active: boolean; onPic
 
     const draw = (t: number) => {
       ctx.clearRect(0, 0, w, h);
-      const on = activeRef.current;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = Math.round((w / COLS) * 1.05) + "px ui-monospace, monospace";
       for (let i = 0; i < cells.length; i++) {
         const c = cells[i];
         const px = c.nx * w, py = c.ny * h;
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = dormant;
-        ctx.beginPath();
-        ctx.arc(px, py, r, 0, 6.283);
-        ctx.fill();
         let q = (t - ord[i] * (1 - WIN)) / WIN;
         if (q < 0) q = 0;
         else if (q > 1) q = 1;
@@ -92,7 +81,7 @@ function LookTile({ look, active, onPick }: { look: Look; active: boolean; onPic
         else if (look.id === "bloom") { sc = 0.4 + 0.6 * e; }
         else if (look.id === "decode") { if (q > 0.04 && q < 0.94) glyph = CHARS[(Math.floor(t * 38 + i * 7)) % CHARS.length]; }
         ctx.globalAlpha = Math.min(1, e);
-        ctx.fillStyle = on ? accent : ink;
+        ctx.fillStyle = accent;
         if (glyph) ctx.fillText(glyph, px + dx, py + dy);
         else { ctx.beginPath(); ctx.arc(px + dx, py + dy, r * sc, 0, 6.283); ctx.fill(); }
       }
