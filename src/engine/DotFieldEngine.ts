@@ -100,6 +100,7 @@ export class DotFieldEngine {
   private lastTs = 0; // previous rAF timestamp — for the directional spring's dt
   private destroyed = false;
   private rs = 1; // render scale: canvas backing = W·rs × H·rs (crisp camera zoom); 1 = base
+  private radMaxDist = 0; // radial pattern: max dot distance from the origin (px) — for the birth-area radius
 
   constructor(canvas: HTMLCanvasElement, cfg: Config, opts: EngineOptions = {}) {
     this.canvas = canvas;
@@ -140,6 +141,10 @@ export class DotFieldEngine {
       next.rvPattern !== prev.rvPattern ||
       next.rvAngle !== prev.rvAngle ||
       next.rvCurveBow !== prev.rvCurveBow ||
+      next.rvOriginX !== prev.rvOriginX ||
+      next.rvOriginY !== prev.rvOriginY ||
+      next.rvOriginSize !== prev.rvOriginSize ||
+      next.rvOriginSoft !== prev.rvOriginSoft ||
       next.rvSpotCount !== prev.rvSpotCount ||
       next.rvSpotSeed !== prev.rvSpotSeed ||
       next.rvSpotBlob !== prev.rvSpotBlob ||
@@ -280,7 +285,42 @@ export class DotFieldEngine {
   /** Assign each dot's reveal order (introT) per the active pattern. */
   private assignOrder(): void {
     if (this.cfg.rvPattern === "spotty") this.assignSpotty();
+    else if (this.cfg.rvPattern === "radial") this.assignRadial();
     else this.assignReveal();
+  }
+
+  /**
+   * Radial order: introT = each dot's distance from the map centre, normalized to [0,1] (centre
+   * dots reveal first, edges last) — a concentric wave. Reuses the sweep reveal machinery (opacity
+   * /scale/motion read introT); the radial crest compression + foam are applied in the render pass.
+   */
+  private assignRadial(): void {
+    const cx = this.cfg.rvOriginX * W,
+      cy = this.cfg.rvOriginY * this.H;
+    let dmax = 0;
+    for (const d of this.dots) {
+      const dist = Math.hypot(d.x - cx, d.y - cy);
+      d.introT = dist;
+      if (dist > dmax) dmax = dist;
+    }
+    this.radMaxDist = dmax;
+    // birth area: dots near the origin reveal first, but as a soft DOME (a gentle inner slope, not
+    // a flat top) so the area has a feathered edge rather than popping in as a hard-edged disc.
+    const core = this.cfg.rvOriginSize * dmax;
+    const EDGE = this.cfg.rvOriginSoft * 0.6; // reveal slope inside the area (0 = hard flat top, softness scales it)
+    let dmax2 = 0;
+    for (const d of this.dots) {
+      const dn = d.introT; // raw distance from origin (px)
+      const t = core <= 0.001 ? dn : dn <= core ? dn * EDGE : core * EDGE + (dn - core);
+      d.introT = t;
+      if (t > dmax2) dmax2 = t;
+    }
+    const inv = dmax2 > 0 ? 1 / dmax2 : 1;
+    for (const d of this.dots) {
+      d.introT *= inv;
+      d.alongN = d.introT;
+      d.perp = 0;
+    }
   }
 
   /**
@@ -484,6 +524,9 @@ export class DotFieldEngine {
     // spotty pattern: a soft front (radius) grows over its own clock (Spread ×'s the pace).
     // front reaches 1+edge at completion so the farthest dots finish → the map fills.
     const spotty = cfg.rvPattern === "spotty";
+    const radial = cfg.rvPattern === "radial";
+    const radCx = cfg.rvOriginX * W,
+      radCy = cfg.rvOriginY * H; // radial wave origin (0..1 across the map)
     const spEdge = Math.max(0.02, cfg.rvSpotEdge);
     const spSpeed = cfg.rvSpeed * Math.max(0.05, cfg.rvSpotSpread);
     const spFront = !reveal ? Infinity : this.revealProgressOn(now, DUR_BASE, spSpeed) * (1 + spEdge);
@@ -515,6 +558,7 @@ export class DotFieldEngine {
     const chaosAmp = cfg.rvChaos * cfg.gap * 1.5; // contained within ~a cell
     const chaosFrame = (now / 40) | 0; // ~25 Hz sparkle
     const blinkStep = ((now * cfg.rvBlinkRate) / 1000) | 0; // increments at the blink rate (Hz)
+    const shimmer = (now / 90) | 0; // ~11 Hz reseed so the radial foam froths rather than freezing
 
     for (let i = 0; i < this.dots.length; i++) {
       const d = this.dots[i];
@@ -645,10 +689,52 @@ export class DotFieldEngine {
         }
 
         // #2 edge compression — sweep only (bunches dots forward at the leading edge)
-        if (!spotty && compOn) {
+        if (!spotty && !radial && compOn) {
           const comp = cfg.rvEdgeComp * Math.exp(-compQ * 4) * (1 - Pe) * 22;
           rox += swX * comp;
           roy += swY * comp;
+        }
+
+        // Radial crest compression + foam — replaces linear motion for the radial pattern. Leading
+        // rings are pulled inward toward the centre (piling/overlapping at high Squish) and ease back
+        // to home as the front passes; foam scatters them into shimmering froth right at the crest.
+        if (radial) {
+          rox = 0;
+          roy = 0;
+          const dcx = d.x - radCx,
+            dcy = d.y - radCy;
+          const hr = Math.hypot(dcx, dcy) || 1;
+          const ux = dcx / hr,
+            uy = dcy / hr; // outward radial unit vector
+          const frontCross = crestFront - d.introT * crestIntroMul; // >0 once the front has passed
+          // birth area: compression + foam fade in over a smoothstep FEATHER band just outside the
+          // core radius, so the calm source blends into the froth instead of a hard ring.
+          const radCore = cfg.rvOriginSize * this.radMaxDist;
+          let areaMul = 1;
+          if (radCore > 0.001) {
+            const band = Math.max(cfg.gap, radCore * cfg.rvOriginSoft * 1.2); // Edge softness widens the feather
+            let e = (hr - radCore) / band; // 0 at the core edge → 1 a band-width outside
+            if (e < 0) e = 0;
+            else if (e > 1) e = 1;
+            areaMul = e * e * (3 - 2 * e); // smoothstep
+          }
+          if (frontCross > 0 && areaMul > 0.001) {
+            const sqW = Math.max(0.02, cfg.rvSquishWidth);
+            // pull toward the centre, clamped at the core edge, faded smoothly across the feather band
+            const comp = Math.min(Math.max(0, hr - radCore), cfg.rvSquish * Math.exp(-frontCross / sqW)) * areaMul;
+            rox -= ux * comp;
+            roy -= uy * comp;
+            if (cfg.rvFoam > 0) {
+              const fi = cfg.rvFoam * Math.exp(-frontCross / (sqW * 0.6)) * areaMul;
+              if (fi > 0.004) {
+                const rj = (hash2(i * 3 + shimmer, i * 7 + 1) - 0.5) * fi * cfg.gap * 2.6; // radial jump
+                const tj = (hash2(i * 5 + shimmer, i * 11 + 3) - 0.5) * fi * cfg.gap * 2.2; // tangential
+                rox += ux * rj - uy * tj;
+                roy += uy * rj + ux * tj;
+                m *= 1 + (cfg.rvFoamDot - 1) * Math.min(1, fi / cfg.rvFoam); // dot size where the foam is
+              }
+            }
+          }
         }
         // ⑦ Crest — effects on the band travelling with the front. `frontCross` = how far the
         // (uncapped) front has passed this dot; the band is [0, area] behind it.

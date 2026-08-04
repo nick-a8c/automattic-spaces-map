@@ -293,6 +293,27 @@ Reads the dot back from Speed + Elasticity; writes real params so the sliders fo
 to be **portable** — full copy-paste spec (React + vanilla + CSS + adaptation checklist) lives in
 `FEELPAD.md` for reuse in other tools.
 
+Radial reveal pattern (② Reveal pattern → **Radial**): a concentric wave bursting from the map
+centre with **crest compression + foam**. Ported from the `radial-wave` sandbox. Order = distance
+from centre (`assignRadial`, reuses the sweep opacity/scale/motion machinery via `introT`). In
+render, when `rvPattern==="radial"`: motion offsets are zeroed and replaced by a radial pull toward
+the centre — `comp = min(hr, rvSquish·e^(−frontCross/rvSquishWidth))` inward, easing to home as the
+front passes — plus **foam** (radial+tangential scatter, ~11 Hz shimmer, `rvFoam`, fading behind)
+and a **foam dot-size** multiplier (`rvFoamDot`). The **origin** is placeable via `rvOriginX/rvOriginY`
+(0..1 across the map; render + `assignRadial` both read it, so it reassigns order on change). The
+wave can be born from an **area** not a point: `rvOriginSize` (0..1 of the reach) — dots within a
+core reveal first, and `rvOriginSoft` (0..1) feathers that edge two ways: a soft reveal DOME (inner
+slope `EDGE = rvOriginSoft·0.6` in `assignRadial`) + a smoothstep FEATHER band on the froth/compression
+(`band = max(gap, rvOriginSize·radMaxDist·rvOriginSoft·1.2)`); the compression clamps at the core edge
+so froth piles against the birth area. `this.radMaxDist` caches the max dot-distance from the origin.
+Controls (in order): Origin X, Origin Y, Origin area, Edge softness, Stagger, Squish (0–300px, uncapped),
+Crest width (normalized), Foam (0–1), Foam dot size (0.2–3×). Fields: `rvSquish/rvSquishWidth/rvFoam/
+rvFoamDot/rvOriginX/rvOriginY/rvOriginSize/rvOriginSoft` in types.ts. Default pattern stays `sweep`, so
+the base look is unchanged. NB the crest-band effects (chaos/blink/ASCII/spray) also key off `frontCross`,
+so they layer onto the radial front too. The sandbox-only guide rings + rings/grid toggle were
+intentionally NOT ported (the map is already a grid). Also hardened `Slider` (controls.tsx) to fall
+back to `min` when its value isn't finite, so a hot-added config field can't render NaN or crash `format()`.
+
 Standing guidance:
 - ~~Render at `devicePixelRatio` for non-retina sharpness.~~ **Do not** — tried & reverted
   3× ("looks weird"); leave the *default* dot rendering as-is (see `dotted-map-no-dpr-snap`

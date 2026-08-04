@@ -21,11 +21,13 @@ const MOTION: Opt[][] = [
   [{ v: "directional", label: "Directional" }],
 ];
 
-// Reveal pattern: directional Sweep vs Spotty (patches grow from seeds).
+// Reveal pattern: directional Sweep, Spotty (patches grow from seeds), or Radial (concentric
+// wave bursting from the map centre, with crest compression + foam).
 const PATTERN: Opt[][] = [
   [
     { v: "sweep", label: "Sweep" },
     { v: "spotty", label: "Spotty" },
+    { v: "radial", label: "Radial" },
   ],
 ];
 
@@ -255,7 +257,7 @@ export function Panel({
             format={(v) => v.toFixed(2)}
           />
         </>
-      ) : (
+      ) : cfg.rvPattern === "spotty" ? (
         <>
           <Slider
             label="Seed count"
@@ -310,6 +312,90 @@ export function Panel({
           >
             ⟳ Re-roll seeds
           </button>
+        </>
+      ) : (
+        <>
+          <Slider
+            label="Origin X"
+            min={0}
+            max={1}
+            step={0.01}
+            value={cfg.rvOriginX}
+            onChange={(v) => update({ rvOriginX: v })}
+            format={(v) => Math.round(v * 100) + "%"}
+          />
+          <Slider
+            label="Origin Y"
+            min={0}
+            max={1}
+            step={0.01}
+            value={cfg.rvOriginY}
+            onChange={(v) => update({ rvOriginY: v })}
+            format={(v) => Math.round(v * 100) + "%"}
+          />
+          <Slider
+            label="Origin area"
+            min={0}
+            max={0.8}
+            step={0.01}
+            value={cfg.rvOriginSize}
+            onChange={(v) => update({ rvOriginSize: v })}
+            format={(v) => Math.round(v * 100) + "%"}
+          />
+          <Slider
+            label="Edge softness"
+            min={0}
+            max={1}
+            step={0.02}
+            value={cfg.rvOriginSoft}
+            onChange={(v) => update({ rvOriginSoft: v })}
+            format={(v) => v.toFixed(2)}
+          />
+          <Slider
+            label="Stagger"
+            min={0}
+            max={1}
+            step={0.02}
+            value={cfg.rvStagger}
+            onChange={(v) => update({ rvStagger: v })}
+            format={(v) => v.toFixed(2)}
+          />
+          <Slider
+            label="Squish (crest)"
+            min={0}
+            max={300}
+            step={1}
+            value={cfg.rvSquish}
+            onChange={(v) => update({ rvSquish: v })}
+            format={(v) => v + "px"}
+          />
+          <Slider
+            label="Crest width"
+            min={0.02}
+            max={0.6}
+            step={0.01}
+            value={cfg.rvSquishWidth}
+            onChange={(v) => update({ rvSquishWidth: v })}
+            format={(v) => v.toFixed(2)}
+          />
+          <Slider
+            label="Foam"
+            min={0}
+            max={1}
+            step={0.02}
+            value={cfg.rvFoam}
+            onChange={(v) => update({ rvFoam: v })}
+            format={(v) => v.toFixed(2)}
+          />
+          <Slider
+            label="Foam dot size"
+            min={0.2}
+            max={3}
+            step={0.05}
+            value={cfg.rvFoamDot}
+            onChange={(v) => update({ rvFoamDot: v })}
+            format={(v) => v.toFixed(2) + "×"}
+          />
         </>
       )}
       </Section>

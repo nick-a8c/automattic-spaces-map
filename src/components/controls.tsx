@@ -253,7 +253,10 @@ export function Slider({
   format?: (v: number) => string;
 }) {
   const fmt = format ?? ((v: number) => String(v));
-  const pct = ((value - min) / (max - min)) * 100;
+  // guard against a non-number value (e.g. a config field added via hot-reload before the live
+  // state carries it): fall back to `min` so the slider never renders NaN or crashes in fmt().
+  const v = Number.isFinite(value) ? value : min;
+  const pct = ((v - min) / (max - min)) * 100;
   return (
     <div className="control">
       <div className="slider">
@@ -264,11 +267,11 @@ export function Slider({
           min={min}
           max={max}
           step={step}
-          value={value}
+          value={v}
           onChange={(e) => onChange(+e.target.value)}
           style={{ "--pct": `${pct}%` } as CSSProperties}
         />
-        <ValueInput value={value} min={min} max={max} fmt={fmt} onCommit={onChange} />
+        <ValueInput value={v} min={min} max={max} fmt={fmt} onCommit={onChange} />
       </div>
     </div>
   );

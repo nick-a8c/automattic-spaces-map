@@ -10,8 +10,9 @@ export type CrestStyle = "dots" | "ascii";
 
 // Reveal — how each dot moves into place (layered on the reveal order)
 export type RevMotion = "none" | "rise" | "fall" | "scatter" | "directional";
-// Reveal — what ORDER dots appear in: a directional sweep, or patches growing from seeds
-export type RevPattern = "sweep" | "spotty";
+// Reveal — what ORDER dots appear in: a directional sweep, patches growing from seeds, or a
+// concentric wave bursting outward from the map centre.
+export type RevPattern = "sweep" | "spotty" | "radial";
 
 export interface Config {
   // global / dots
@@ -41,6 +42,15 @@ export interface Config {
   rvSpotSeed: number; // PRNG seed for seed placement — re-roll bumps this
   rvSpotBlob: number; // blob warp amount (0 = circular fronts, higher = organic fBm blobs)
   rvSpotBlobScale: number; // blob noise frequency (low = zoomed-in large blobs)
+  // radial pattern (concentric wave bursting from an origin; order = distance from that origin)
+  rvOriginX: number; // wave origin X, 0..1 across the map width (0.5 = centre)
+  rvOriginY: number; // wave origin Y, 0..1 down the map height (0.5 = centre)
+  rvOriginSize: number; // birth-area radius (0..1 of the reach): 0 = a point, higher = born from an area
+  rvOriginSoft: number; // birth-area edge softness (0..1): 0 = hard edge, 1 = very feathered
+  rvSquish: number; // crest compression — leading rings pulled inward (px); high values pile/overlap
+  rvSquishWidth: number; // how far behind the front the compression reaches (normalized reveal units)
+  rvFoam: number; // chaotic scatter at the crest — shimmering froth that fades to calm behind (0..1)
+  rvFoamDot: number; // dot-size multiplier where the foam is (1 = same, >1 bigger, <1 smaller)
   // reveal — ③ opacity track
   rvFade: number; // per-dot start opacity (0 = fade from invisible)
   rvOpacEase: Bezier; // opacity easing (cubic-bézier)
@@ -115,6 +125,14 @@ export const DEFAULT_CONFIG: Config = {
   rvSpotSeed: 6,
   rvSpotBlob: 0.2,
   rvSpotBlobScale: 3.9,
+  rvOriginX: 0.5,
+  rvOriginY: 0.5,
+  rvOriginSize: 0.1,
+  rvOriginSoft: 0.5,
+  rvSquish: 80,
+  rvSquishWidth: 0.18,
+  rvFoam: 0.45,
+  rvFoamDot: 1.4,
   rvFade: 0,
   rvOpacEase: [0.7337614111587109, 0.020265492957746573, 0.718640828998368, 0.9628436619718309],
   rvOpacSpeed: 3.05,
