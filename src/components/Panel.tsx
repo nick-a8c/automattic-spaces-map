@@ -5,7 +5,7 @@
 import { useState, type ReactNode } from "react";
 import type { Config } from "../engine/types";
 import type { Bezier } from "../engine/easing";
-import { Dial, Segmented, Slider, TimingBar, type Opt } from "./controls";
+import { Dial, FeelPad, Segmented, Slider, TimingBar, type Opt } from "./controls";
 import { BezierEditor } from "./BezierEditor";
 import { PresetBar } from "./PresetBar";
 
@@ -173,6 +173,17 @@ export function Panel({
         value={cfg.size}
         onChange={(v) => update({ size: v })}
       />
+
+      {/* feel pad — drag one dot to set pace × texture (writes Speed + spring/jitter/edge) */}
+      <Section title="◐ Feel">
+      <p className="feelpad-hint">Drag to find a vibe — release to preview.</p>
+      <FeelPad
+        speed={cfg.rvSpeed}
+        elasticity={cfg.rvElasticity}
+        onChange={update}
+        onRelease={onReplay}
+      />
+      </Section>
 
       {/* ① timing */}
       <Section title="① Timing">

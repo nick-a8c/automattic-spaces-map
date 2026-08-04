@@ -618,6 +618,55 @@ canvas {
   text-transform: uppercase;
   color: var(--label);
 }
+/* 2-D feel pad — drag a dot to set pace (x) × texture (y) */
+.feelpad-hint {
+  margin: 0 0 10px;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  color: var(--label);
+  text-align: center;
+}
+.feelpad-control {
+  display: flex;
+  justify-content: center;
+}
+.feelpad {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  border: 1px solid var(--track-empty);
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+  background:
+    linear-gradient(to right, transparent calc(50% - 0.5px), var(--track-empty) calc(50% - 0.5px), var(--track-empty) calc(50% + 0.5px), transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--track-empty) calc(50% - 0.5px), var(--track-empty) calc(50% + 0.5px), transparent calc(50% + 0.5px));
+}
+.feelpad-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #0387ff;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.feelpad-edge {
+  position: absolute;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 7px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--label);
+  pointer-events: none;
+}
+.fp-top { top: 5px; left: 50%; transform: translateX(-50%); }
+.fp-bottom { bottom: 5px; left: 50%; transform: translateX(-50%); }
+.fp-left { left: 6px; top: 50%; transform: translateY(-50%); }
+.fp-right { right: 6px; top: 50%; transform: translateY(-50%); }
+
 /* muted note shown in place of a control that is linked to the main parameter */
 .linked-note {
   font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;

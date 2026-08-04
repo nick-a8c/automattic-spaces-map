@@ -70,6 +70,84 @@ export function Dial({
   );
 }
 
+// 2-D "feel pad": drag one dot to set the reveal's overall vibe. X = pace (Speed),
+// Y = texture (Rigid ↔ Smooth). One gesture writes several rv* params at once — a fast way to
+// find a feel before fine-tuning with the sliders below. The dot's resting position is read
+// back from Speed (x) and Elasticity (y), the two hero params; releasing replays the reveal.
+export function FeelPad({
+  speed,
+  elasticity,
+  onChange,
+  onRelease,
+}: {
+  speed: number;
+  elasticity: number;
+  onChange: (patch: {
+    rvSpeed: number;
+    rvElasticity: number;
+    rvJitterTime: number;
+    rvEdgeSharp: number;
+  }) => void;
+  onRelease?: () => void;
+}) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  const SPEED: [number, number] = [0.4, 1.7];
+  const ELAS: [number, number] = [0, 0.5];
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+  const inv = (v: number, a: number, b: number) => clamp01((v - a) / (b - a));
+  const r2 = (v: number) => Math.round(v * 100) / 100;
+
+  // dot position from the two hero params (px right = faster, py up = smoother)
+  const px = inv(speed, SPEED[0], SPEED[1]);
+  const py = inv(elasticity, ELAS[0], ELAS[1]);
+
+  const setFrom = (clientX: number, clientY: number) => {
+    const el = wrap.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const nx = clamp01((clientX - r.left) / r.width);
+    const ny = 1 - clamp01((clientY - r.top) / r.height); // up = smoother
+    onChange({
+      rvSpeed: r2(lerp(SPEED[0], SPEED[1], nx)),
+      rvElasticity: r2(lerp(ELAS[0], ELAS[1], ny)),
+      rvJitterTime: r2(lerp(0, 0.12, ny)),
+      rvEdgeSharp: r2(lerp(0.7, 0, ny)),
+    });
+  };
+
+  const end = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    onRelease?.();
+  };
+
+  return (
+    <div className="control feelpad-control">
+      <div
+        ref={wrap}
+        className="feelpad"
+        onPointerDown={(e) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setFrom(e.clientX, e.clientY);
+        }}
+        onPointerMove={(e) => dragging.current && setFrom(e.clientX, e.clientY)}
+        onPointerUp={end}
+        onPointerCancel={end}
+      >
+        <span className="feelpad-edge fp-top">Smooth</span>
+        <span className="feelpad-edge fp-bottom">Rigid</span>
+        <span className="feelpad-edge fp-left">Slow</span>
+        <span className="feelpad-edge fp-right">Fast</span>
+        <div className="feelpad-dot" style={{ left: `${px * 100}%`, top: `${(1 - py) * 100}%` }} />
+      </div>
+    </div>
+  );
+}
+
 // Live reveal playhead: a thin bar that fills in sync with the actual reveal (resets on replay,
 // tracks Speed/Delay). Runs its own rAF and writes width to a ref — no React state churn.
 export function TimingBar({ getProgress }: { getProgress: () => number }) {

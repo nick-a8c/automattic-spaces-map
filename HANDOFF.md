@@ -270,9 +270,9 @@ time-based animation. Use **Playwright** headless instead — it renders at real
 ## Possible next steps
 
 Open threads offered but not built (natural pickups for the next session):
-- **Looks concept, tiers 2–3:** the **feel pad** (calm↔energetic × precise↔organic) and the
-  **describe-it** text→settings path (a real one-shot AI call). Both mocked in the sandbox
-  artifact; only tier 1 (the gallery) is in the tool. See [[dotted-world-map]].
+- **Looks concept, tier 3:** the **describe-it** text→settings path (a real one-shot AI call) —
+  still mocked in the sandbox artifact, not in the tool. See [[dotted-world-map]].
+  (Tier 1, the gallery, and tier 2, the **feel pad**, are both shipped — see below.)
 - **Timeline:** drag the easing-curve handles directly on a lane block (currently read-only;
   edit via the panel's BezierEditor). Optionally a bigger axis / horizontal scroll for very slow
   reveals (fixed 8s axis clamps them today).
@@ -286,6 +286,12 @@ Open threads offered but not built (natural pickups for the next session):
 Done this session: Looks gallery, Timeline view (master track + easing curves + seconds axis),
 Site marker-animation panel, canvas camera (pan/zoom/reset) + crisp-zoom re-rendering, plus the
 Direction dial, live Timing playhead, Loop/Surprise, and the blue gallery dots.
+
+Feel pad (◐ Feel section, top of the panel): drag one dot — X = Slow↔Fast (`rvSpeed`),
+Y = Rigid↔Smooth (blends `rvElasticity` + `rvJitterTime` + `rvEdgeSharp`); release replays.
+Reads the dot back from Speed + Elasticity; writes real params so the sliders follow. It's built
+to be **portable** — full copy-paste spec (React + vanilla + CSS + adaptation checklist) lives in
+`FEELPAD.md` for reuse in other tools.
 
 Standing guidance:
 - ~~Render at `devicePixelRatio` for non-retina sharpness.~~ **Do not** — tried & reverted
