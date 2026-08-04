@@ -23,6 +23,19 @@ Dev-server launch config also exists as `dotted-world-map` in `.claude/launch.js
 
 - **Space** replays the Reveal (works in both views; ignored while typing in a field).
 - Bottom-left toggle flips **Builder ⇄ Site**.
+- **Canvas camera** (Builder): LMB-drag pans, wheel zooms (cursor-anchored, clamped 0.5×–10×),
+  **⌖ Default camera** (top-left of the stage) resets it. A view-only transform on `#mapwrap`
+  layered over the `cfg.zoom` slider (which it leaves alone); `App` keeps it in refs
+  (`camRef`/`mapwrapRef`) and applies the transform imperatively so panning doesn't re-render
+  React. React only sets `transform-origin` on `#mapwrap`, never `transform`, so re-renders can't
+  clobber the live camera; `#stage` is `overflow:hidden` + `cursor:grab`.
+  - **Crisp zoom:** the engine's `setRenderScale(rs)` re-renders the canvas at `W·rs × H·rs`
+    (context scaled by `rs`; drawing stays in W-space) so magnified dots stay sharp instead of
+    CSS-upscaling the 1800px bitmap. `App` debounces `setRenderScale(camZoom)` ~140ms after the
+    wheel settles (smooth CSS zoom while moving, sharpens when you stop); reset → `rs=1`. Capped at
+    `MAX_RS=3` for perf. **NB:** this is NOT the rejected devicePixelRatio/pixel-snap change
+    ([[dotted-map-no-dpr-snap]]) — at camZoom=1 `rs=1`, so the default view is byte-identical; the
+    higher resolution only exists while the camera is zoomed in.
 - **Copy settings** dumps the current `Config` as clean JSON (schema-exact).
 - **Looks** (panel top): a **"◱ Browse looks"** launcher opens a full-screen gallery
   (`LooksGallery.tsx`) of 6 live animated preview tiles — Sweep / Corner spring / Decode / Bloom /
@@ -256,9 +269,28 @@ time-based animation. Use **Playwright** headless instead — it renders at real
 
 ## Possible next steps
 
+Open threads offered but not built (natural pickups for the next session):
+- **Looks concept, tiers 2–3:** the **feel pad** (calm↔energetic × precise↔organic) and the
+  **describe-it** text→settings path (a real one-shot AI call). Both mocked in the sandbox
+  artifact; only tier 1 (the gallery) is in the tool. See [[dotted-world-map]].
+- **Timeline:** drag the easing-curve handles directly on a lane block (currently read-only;
+  edit via the panel's BezierEditor). Optionally a bigger axis / horizontal scroll for very slow
+  reveals (fixed 8s axis clamps them today).
+- **Marker animation (Site):** per-city control (currently the two share one set + Stagger); an
+  easing choice (currently fixed ease-out).
+- **Crisp zoom:** raise `MAX_RS` above 3 if sharper deep zoom is wanted — but profile first
+  (bigger canvas rendered every frame; watch for jank at high density).
+- **Bump GitHub Actions versions** (`actions/checkout`/`setup-node` → v5) to silence the Node-20
+  deprecation warning in the deploy workflow (harmless today).
+
+Done this session: Looks gallery, Timeline view (master track + easing curves + seconds axis),
+Site marker-animation panel, canvas camera (pan/zoom/reset) + crisp-zoom re-rendering, plus the
+Direction dial, live Timing playhead, Loop/Surprise, and the blue gallery dots.
+
+Standing guidance:
 - ~~Render at `devicePixelRatio` for non-retina sharpness.~~ **Do not** — tried & reverted
-  3× ("looks weird"); leave the dot rendering as-is (see `dotted-map-no-dpr-snap` memory).
-- ~~Loop / auto-replay toggle~~ — done (⟲ Loop button).
+  3× ("looks weird"); leave the *default* dot rendering as-is (see `dotted-map-no-dpr-snap`
+  memory). NB: the crisp-**zoom** render-scale is separate and allowed (default view unchanged).
 - Keep tuning the Reveal feel; add more patterns/effects as new, cleanly-scoped controls.
 
 The persistent project memory (`dotted-world-map.md` in the Claude memory dir) has the

@@ -9,6 +9,7 @@ const W = 1800;
 const TAU = Math.PI * 2;
 const WIN_BASE = 0.65; // base per-dot reveal window; the track Speed divides into it
 const DUR_BASE = 3200; // base reveal duration (ms); the global Speed divides into it
+const MAX_RS = 3; // max render-scale for crisp camera zoom (perf cap — see setRenderScale)
 
 /** Small deterministic PRNG (mulberry32) so Spotty's seed placement is reproducible per seed. */
 function mulberry32(seed: number): () => number {
@@ -98,6 +99,7 @@ export class DotFieldEngine {
   private raf = 0;
   private lastTs = 0; // previous rAF timestamp — for the directional spring's dt
   private destroyed = false;
+  private rs = 1; // render scale: canvas backing = W·rs × H·rs (crisp camera zoom); 1 = base
 
   constructor(canvas: HTMLCanvasElement, cfg: Config, opts: EngineOptions = {}) {
     this.canvas = canvas;
@@ -110,8 +112,8 @@ export class DotFieldEngine {
     this.svgImg.onload = () => {
       if (this.destroyed) return;
       this.H = Math.round(W * (this.svgImg.height / this.svgImg.width));
-      this.canvas.width = W;
-      this.canvas.height = this.H;
+      this.canvas.width = Math.round(W * this.rs);
+      this.canvas.height = Math.round(this.H * this.rs);
       this.buildMask();
       this.buildDots();
       this.opts.onSize?.(W, this.H);
@@ -153,6 +155,20 @@ export class DotFieldEngine {
   replayIntro(): void {
     this.introStart = performance.now();
     this.resetSpring();
+  }
+
+  /** Set the render-scale (device pixels per W-unit) so camera zoom stays crisp. rs=1 is the base
+   * 1800-wide backing (unchanged default); a higher rs re-renders the dots at more pixels instead
+   * of CSS-magnifying the finished bitmap. Capped at MAX_RS for performance; drawing stays in
+   * W-space (the loop scales the context by rs). Repaints immediately so there's no blank flash. */
+  setRenderScale(rs: number): void {
+    const clamped = Math.max(1, Math.min(MAX_RS, rs));
+    if (Math.abs(clamped - this.rs) < 0.01) return;
+    this.rs = clamped;
+    if (!this.mask) return; // not loaded yet — load() will size from rs
+    this.canvas.width = Math.round(W * this.rs);
+    this.canvas.height = Math.round(this.H * this.rs);
+    this.render(performance.now(), 0);
   }
 
   /** Linear reveal playhead 0..1 on the global clock (elapsed·speed ÷ base duration, after the
@@ -419,13 +435,21 @@ export class DotFieldEngine {
 
   private loop = (ts: number): void => {
     if (this.destroyed) return;
-    const cfg = this.cfg,
-      ctx = this.ctx,
-      H = this.H;
-    const now = performance.now();
     // dt for the directional spring (clamped so a slow/first frame can't blow it up)
     const dt = this.lastTs ? Math.min(0.033, (ts - this.lastTs) / 1000) : 0;
     this.lastTs = ts;
+    this.render(performance.now(), dt);
+    this.raf = requestAnimationFrame(this.loop);
+  };
+
+  /** Draw one frame at the current render scale. Split from the rAF loop so a resolution change
+   * (crisp zoom) can repaint immediately without spawning a second rAF loop. */
+  private render(now: number, dt: number): void {
+    const cfg = this.cfg,
+      ctx = this.ctx,
+      H = this.H;
+    // canvas backing is W·rs × H·rs; scale the context so all drawing stays in W-space
+    ctx.setTransform(this.rs, 0, 0, this.rs, 0, 0);
     ctx.fillStyle = cfg.bg;
     ctx.fillRect(0, 0, W, H);
 
@@ -712,6 +736,5 @@ export class DotFieldEngine {
       }
     }
     ctx.globalAlpha = 1;
-    this.raf = requestAnimationFrame(this.loop);
-  };
+  }
 }

@@ -67,8 +67,34 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+#stage.panning {
+  cursor: grabbing;
+}
+.cam-reset {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 6;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--ctrl-border);
+  background: #fff;
+  color: var(--ctrl-border);
+  border-radius: 3px;
+  padding: 7px 11px;
+  cursor: pointer;
+}
+.cam-reset:hover {
+  border-color: var(--ctrl-on);
+  color: var(--ctrl-on);
 }
 #mapwrap {
   position: relative;

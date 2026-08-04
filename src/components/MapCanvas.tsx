@@ -9,6 +9,7 @@ export interface MapHandle {
   replayIntro: () => void;
   getCanvas: () => HTMLCanvasElement | null;
   getProgress: () => number;
+  setRenderScale: (rs: number) => void;
 }
 
 export const MapCanvas = forwardRef<MapHandle, { cfg: Config; className?: string }>(
@@ -38,6 +39,7 @@ export const MapCanvas = forwardRef<MapHandle, { cfg: Config; className?: string
         replayIntro: () => engineRef.current?.replayIntro(),
         getCanvas: () => canvasRef.current,
         getProgress: () => engineRef.current?.getProgress() ?? 1,
+        setRenderScale: (rs: number) => engineRef.current?.setRenderScale(rs),
       }),
       [],
     );
