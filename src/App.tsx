@@ -6,6 +6,7 @@ import { ViewToggle, type View } from "./components/ViewToggle";
 import { SpacesPage, DEFAULT_MARKER_ANIM, type MarkerAnim } from "./site/SpacesPage";
 import { LooksGallery } from "./components/LooksGallery";
 import { Timeline } from "./components/Timeline";
+import { Onboarding } from "./components/Onboarding";
 import type { Look } from "./looks";
 
 function makeInitialConfig(): Config {
@@ -77,6 +78,22 @@ export default function App() {
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [markerAnim, setMarkerAnim] = useState<MarkerAnim>(DEFAULT_MARKER_ANIM);
   const [placing, setPlacing] = useState(false); // "place origin pin" mode: next map click sets the radial origin
+  // onboarding walkthrough — auto-opens once for first-time visitors, re-openable from the corner button
+  const [guideOpen, setGuideOpen] = useState(() => {
+    try {
+      return localStorage.getItem("dwm-onboarded") !== "1";
+    } catch {
+      return false;
+    }
+  });
+  const closeGuide = () => {
+    setGuideOpen(false);
+    try {
+      localStorage.setItem("dwm-onboarded", "1");
+    } catch {
+      /* storage blocked — it'll just show again next time */
+    }
+  };
   const mapRef = useRef<MapHandle>(null);
   const recRef = useRef<MediaRecorder | null>(null);
 
@@ -239,7 +256,12 @@ export default function App() {
 
   return (
     <>
-      <ViewToggle view={view} onChange={setView} />
+      <div className="corner-controls">
+        <ViewToggle view={view} onChange={setView} />
+        <button className="guide-btn" onClick={() => setGuideOpen(true)}>
+          <span className="q">?</span> How it works
+        </button>
+      </div>
 
       {view === "builder" ? (
         <div className="builder-layout">
@@ -306,6 +328,7 @@ export default function App() {
           onReplayMap={() => mapRef.current?.replayIntro()}
         />
       )}
+      {guideOpen && <Onboarding onClose={closeGuide} />}
     </>
   );
 }
