@@ -3,7 +3,7 @@
 // Color is locked to #0387ff, background white, shape circle.
 
 import { useState, type ReactNode } from "react";
-import type { Config } from "../engine/types";
+import { DEFAULT_CONFIG, type Config } from "../engine/types";
 import type { Bezier } from "../engine/easing";
 import { Dial, FeelPad, Segmented, Slider, TimingBar, type Opt } from "./controls";
 import { BezierEditor } from "./BezierEditor";
@@ -85,6 +85,8 @@ export interface PanelProps {
   onOpenLooks: () => void;
   onToggleTimeline: () => void;
   timelineOn: boolean;
+  onPlaceOrigin: () => void;
+  placing: boolean;
 }
 
 export function Panel({
@@ -100,8 +102,26 @@ export function Panel({
   onOpenLooks,
   onToggleTimeline,
   timelineOn,
+  onPlaceOrigin,
+  placing,
 }: PanelProps) {
   const [copied, setCopied] = useState(false);
+  // Simple | Pro mode — Simple shows a guided subset, Pro the full panel. Persisted, default Simple.
+  const [mode, setMode] = useState<"simple" | "pro">(() => {
+    try {
+      return localStorage.getItem("dwm-mode") === "pro" ? "pro" : "simple";
+    } catch {
+      return "simple";
+    }
+  });
+  const pickMode = (m: "simple" | "pro") => {
+    setMode(m);
+    try {
+      localStorage.setItem("dwm-mode", m);
+    } catch {
+      /* storage blocked — mode just won't persist */
+    }
+  };
 
   const copySettings = async () => {
     const text = JSON.stringify(cfg, null, 2);
@@ -134,6 +154,138 @@ export function Panel({
 
   return (
     <aside id="panel">
+      {/* Simple | Pro mode toggle — Simple curates a guided subset; Pro is the full panel */}
+      <div className="modeseg" data-mode={mode}>
+        <button className={mode === "simple" ? "on" : ""} onClick={() => pickMode("simple")}>
+          Simple
+        </button>
+        <button className={mode === "pro" ? "on" : ""} onClick={() => pickMode("pro")}>
+          Pro
+        </button>
+        <span className="modeseg-ind" />
+      </div>
+      <p className="mode-sub">
+        {mode === "simple"
+          ? "Pick a look, nudge the feel, tune a few essentials."
+          : "Every parameter — the full reveal pipeline, curves, timeline & presets."}
+      </p>
+
+      <div className="panel-scroll">
+      {mode === "simple" ? (
+        <div className="simple-view">
+          <div className="view-launchers">
+            <button className="btn looks-launch" onClick={onOpenLooks}>
+              ◱ Browse looks
+            </button>
+          </div>
+          <hr className="section" />
+          <FeelPad
+            speed={cfg.rvSpeed}
+            elasticity={cfg.rvElasticity}
+            onChange={update}
+            onRelease={onReplay}
+          />
+          <hr className="section" />
+          <Segmented
+            label="Pattern"
+            rows={PATTERN}
+            value={cfg.rvPattern}
+            onChange={(v) => update({ rvPattern: v as Config["rvPattern"] })}
+          />
+          <Slider
+            label="Speed"
+            min={0.25}
+            max={4}
+            step={0.05}
+            value={cfg.rvSpeed}
+            onChange={(v) => update({ rvSpeed: v })}
+            format={(v) => v.toFixed(2) + "×"}
+          />
+          {cfg.rvPattern === "radial" ? (
+            <>
+              <Slider
+                label="Squish"
+                min={0}
+                max={300}
+                step={1}
+                value={cfg.rvSquish}
+                onChange={(v) => update({ rvSquish: v })}
+                format={(v) => v + "px"}
+              />
+              <Slider
+                label="Foam"
+                min={0}
+                max={1}
+                step={0.02}
+                value={cfg.rvFoam}
+                onChange={(v) => update({ rvFoam: v })}
+                format={(v) => v.toFixed(2)}
+              />
+              <button className={placing ? "btn primary" : "btn"} onClick={onPlaceOrigin}>
+                {placing ? "⌖ Click the map…" : "⌖ Place origin pin"}
+              </button>
+            </>
+          ) : cfg.rvPattern === "spotty" ? (
+            <>
+              <Slider
+                label="Seed count"
+                min={1}
+                max={20}
+                step={1}
+                value={cfg.rvSpotCount}
+                onChange={(v) => update({ rvSpotCount: v })}
+              />
+              <Slider
+                label="Spread speed"
+                min={0.25}
+                max={4}
+                step={0.05}
+                value={cfg.rvSpotSpread}
+                onChange={(v) => update({ rvSpotSpread: v })}
+                format={(v) => v.toFixed(2) + "×"}
+              />
+            </>
+          ) : (
+            <>
+              <Dial label="Direction" value={cfg.rvAngle} step={15} onChange={(v) => update({ rvAngle: v })} />
+              <Slider
+                label="Stagger"
+                min={0}
+                max={1}
+                step={0.02}
+                value={cfg.rvStagger}
+                onChange={(v) => update({ rvStagger: v })}
+                format={(v) => v.toFixed(2)}
+              />
+            </>
+          )}
+          <hr className="section" />
+          <Slider
+            label="Density"
+            min={1}
+            max={11}
+            step={0.1}
+            value={cfg.gap}
+            onChange={(v) => update({ gap: v })}
+            format={(v) => v.toFixed(1)}
+          />
+          <Slider
+            label="Dot size"
+            min={0.5}
+            max={2.5}
+            step={0.1}
+            value={cfg.size}
+            onChange={(v) => update({ size: v })}
+          />
+          <button
+            className="btn"
+            onClick={() => update({ gap: DEFAULT_CONFIG.gap, size: DEFAULT_CONFIG.size })}
+          >
+            ⟲ Reset dots (density &amp; size)
+          </button>
+        </div>
+      ) : (
+        <>
       {/* views — the animated Looks gallery + the docked Timeline; the panel is "Expert" */}
       <div className="view-launchers">
         <button className="btn looks-launch" onClick={onOpenLooks}>
@@ -779,6 +931,22 @@ export function Panel({
       </button>
 
       <PresetBar cfg={cfg} onApply={update} onReplay={onReplay} />
+        </>
+      )}
+      </div>
+      {mode === "simple" && (
+        <div className="simple-actions">
+          <button className="btn primary" onClick={onReplay}>
+            ↻ Replay reveal
+          </button>
+          <button className="btn" onClick={onSurprise}>
+            ✦ Surprise me
+          </button>
+          <button className={recording ? "btn rec" : "btn"} onClick={onRecord}>
+            {recording ? "■ Stop & save .webm" : "● Record reveal"}
+          </button>
+        </div>
+      )}
     </aside>
   );
 }

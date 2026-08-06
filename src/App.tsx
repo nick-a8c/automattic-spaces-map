@@ -76,6 +76,7 @@ export default function App() {
   const [activeLook, setActiveLook] = useState<string | null>(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [markerAnim, setMarkerAnim] = useState<MarkerAnim>(DEFAULT_MARKER_ANIM);
+  const [placing, setPlacing] = useState(false); // "place origin pin" mode: next map click sets the radial origin
   const mapRef = useRef<MapHandle>(null);
   const recRef = useRef<MediaRecorder | null>(null);
 
@@ -128,6 +129,20 @@ export default function App() {
 
   const onPanDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return;
+    // "place origin pin": map the click to normalized map coords (the canvas rect already reflects
+    // camera zoom/pan, so click ÷ rect works at any zoom), set the radial origin, then replay.
+    if (placing) {
+      const canvas = mapRef.current?.getCanvas();
+      if (canvas) {
+        const r = canvas.getBoundingClientRect();
+        const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+        update({ rvOriginX: Math.round(x * 100) / 100, rvOriginY: Math.round(y * 100) / 100 });
+        mapRef.current?.replayIntro();
+      }
+      setPlacing(false);
+      return;
+    }
     panRef.current = { sx: e.clientX, sy: e.clientY, cx: camRef.current.x, cy: camRef.current.y };
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     stageRef.current?.classList.add("panning");
@@ -148,6 +163,11 @@ export default function App() {
     applyCam();
     mapRef.current?.setRenderScale(1);
   };
+  const placeOrigin = () => setPlacing((p) => !p);
+  // crosshair cursor while placing — toggled imperatively so it composes with the .panning class
+  useEffect(() => {
+    stageRef.current?.classList.toggle("placing", placing);
+  }, [placing]);
 
   const update = (patch: Partial<Config>) => setCfg((c) => ({ ...c, ...patch }));
 
@@ -266,6 +286,8 @@ export default function App() {
             onOpenLooks={() => setLooksOpen(true)}
             onToggleTimeline={() => setTimelineOpen((o) => !o)}
             timelineOn={timelineOpen}
+            onPlaceOrigin={placeOrigin}
+            placing={placing}
           />
           {looksOpen && (
             <LooksGallery

@@ -314,6 +314,27 @@ so they layer onto the radial front too. The sandbox-only guide rings + rings/gr
 intentionally NOT ported (the map is already a grid). Also hardened `Slider` (controls.tsx) to fall
 back to `min` when its value isn't finite, so a hot-added config field can't render NaN or crash `format()`.
 
+**Simple | Pro mode (Panel.tsx).** A `dwm-mode` toggle (localStorage, default Simple) at the panel top.
+Layout is header / scrolling body (`.panel-scroll`) / footer: `#panel` is a flex column with
+`overflow:hidden`; the controls scroll in `.panel-scroll`; the Simple action buttons live in a fixed
+`.simple-actions` footer (Replay / Surprise / Record) so they never jump when the hero sliders swap.
+SIMPLE = Browse looks + Feel pad + Pattern + Speed + the pattern's 2 hero controls (radial→Squish/Foam,
+spotty→Seed count/Spread, sweep→Direction dial/Stagger) + a separate Density/Dot size group with a
+"Reset dots" button (→ DEFAULT_CONFIG.gap/size) + the footer. PRO = the full panel unchanged. Every
+Simple control writes real cfg, so switching modes never loses work.
+
+**Place origin pin (radial, Simple).** A button arms `placing` (App state); the next click on `#stage`
+maps to normalized map coords via the canvas rect (`click ÷ rect` — correct at any camera zoom/pan),
+sets `rvOriginX/Y`, replays, and disarms. `#stage.placing` shows a crosshair (toggled imperatively so
+it composes with `.panning`).
+
+**Radial "ring" fix (the important one).** The Squish compression used to pull dots INWARD toward the
+centre; any strong inward pull folds a band of radii onto one radius (a caustic) → a hard bright ring
+on the uniform grid. Now Squish **bunches dots toward the crest** (pull toward the front radius by a
+factor `< 0.72`, faded near the core), which is strictly monotonic in radius → can NEVER fold into a
+ring, at any Squish value (verified at 300). Matches the original reference (densest at the crest).
+Onboarding walkthrough for Simple mode lives as a sandbox artifact (not in the repo).
+
 Standing guidance:
 - ~~Render at `devicePixelRatio` for non-retina sharpness.~~ **Do not** — tried & reverted
   3× ("looks weird"); leave the *default* dot rendering as-is (see `dotted-map-no-dpr-snap`

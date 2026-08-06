@@ -720,10 +720,15 @@ export class DotFieldEngine {
           }
           if (frontCross > 0 && areaMul > 0.001) {
             const sqW = Math.max(0.02, cfg.rvSquishWidth);
-            // pull toward the centre, clamped at the core edge, faded smoothly across the feather band
-            const comp = Math.min(Math.max(0, hr - radCore), cfg.rvSquish * Math.exp(-frontCross / sqW)) * areaMul;
-            rox -= ux * comp;
-            roy -= uy * comp;
+            // Squish: bunch dots toward the CREST (the front radius) by a factor k < 1 — this
+            // compresses the leading spacing (denser at the crest, normal behind) while staying
+            // strictly monotonic in radius, so it can NEVER fold into a caustic ring. (A large
+            // inward pull toward the centre collapses a band of radii onto one radius → the ring.)
+            const frontR = (crestFront / Math.max(0.001, crestIntroMul)) * this.radMaxDist; // approx crest radius
+            const k = Math.min(0.72, (cfg.rvSquish / 300) * 0.72) * areaMul * Math.exp(-frontCross / sqW);
+            const pull = k * Math.max(0, frontR - hr); // outward, toward the crest
+            rox += ux * pull;
+            roy += uy * pull;
             if (cfg.rvFoam > 0) {
               const fi = cfg.rvFoam * Math.exp(-frontCross / (sqW * 0.6)) * areaMul;
               if (fi > 0.004) {

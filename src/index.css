@@ -76,6 +76,9 @@ body {
 #stage.panning {
   cursor: grabbing;
 }
+#stage.placing {
+  cursor: crosshair;
+}
 .cam-reset {
   position: absolute;
   top: 14px;
@@ -113,9 +116,18 @@ canvas {
   flex: 0 0 310px;
   border-left: 1px solid var(--panel-border);
   background: var(--panel-bg);
-  padding: 20px 18px 60px;
-  overflow-y: auto;
+  padding: 20px 18px 0;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* the controls scroll between the fixed mode toggle (top) and the Simple action footer (bottom) */
+.panel-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
 }
 .group {
   margin-bottom: 18px;
@@ -302,6 +314,64 @@ canvas {
 .view-launchers .btn {
   flex: 1;
   width: auto;
+}
+
+/* Simple | Pro mode toggle */
+.modeseg {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+  border: 1px solid var(--ctrl-border);
+  border-radius: 6px;
+  padding: 2px;
+  margin-bottom: 10px;
+}
+.modeseg button {
+  position: relative;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  cursor: pointer;
+  color: var(--ctrl-border);
+  border-radius: 4px;
+  transition: color 0.18s ease;
+}
+.modeseg button.on {
+  color: #fff;
+}
+.modeseg-ind {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  height: calc(100% - 4px);
+  width: calc(50% - 2px);
+  background: var(--ctrl-on);
+  border-radius: 4px;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modeseg[data-mode="pro"] .modeseg-ind {
+  transform: translateX(100%);
+}
+.mode-sub {
+  margin: 0 0 14px;
+  font-family: "ABeeZee", ui-sans-serif, system-ui, sans-serif;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--label);
+}
+/* fixed action footer — always visible at the panel bottom; never jumps when the hero sliders
+   swap on a pattern / Surprise change, because the controls scroll independently above it */
+.simple-actions {
+  flex: 0 0 auto;
+  padding: 12px 0 18px;
+  border-top: 1px solid var(--panel-border);
+  background: var(--panel-bg);
 }
 .btn.tl-toggle.on {
   background: #0387ff;
