@@ -133,6 +133,11 @@ canvas {
   min-height: 0;
   overflow-y: auto;
   padding-bottom: 24px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.panel-scroll::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 .group {
   margin-bottom: 18px;
@@ -173,8 +178,8 @@ canvas {
   color: #16171a;
 }
 .rev-caret {
-  color: var(--value);
-  font-size: 8px;
+  color: inherit;
+  font-size: 13px;
 }
 
 /* ---------- looks launcher + gallery ---------- */
