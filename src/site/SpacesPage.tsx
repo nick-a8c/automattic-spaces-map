@@ -22,11 +22,11 @@ export interface MarkerAnim {
 }
 export const DEFAULT_MARKER_ANIM: MarkerAnim = {
   op0: 0,
-  sc0: 0.4,
+  sc0: 0.95,
   offX: 0,
-  offY: 16,
+  offY: 0,
   delay: 1000,
-  dur: 600,
+  dur: 1150,
   stagger: 260,
 };
 

@@ -35,8 +35,8 @@ export function PresetBar({
 }) {
   const [presets, setPresets] = useState<Record<string, Partial<Config>>>(loadPresets);
   const [name, setName] = useState("");
-  const [paste, setPaste] = useState("");
   const [msg, setMsg] = useState("");
+  const [open, setOpen] = useState(false); // collapsed by default
 
   const flash = (m: string) => {
     setMsg(m);
@@ -67,65 +67,46 @@ export function PresetBar({
     delete p[n];
     persist(p);
   };
-  const applyPaste = () => {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(paste);
-    } catch {
-      flash("Invalid JSON");
-      return;
-    }
-    const clean = sanitize(parsed);
-    const n = Object.keys(clean).length;
-    if (!n) {
-      flash("No known settings found");
-      return;
-    }
-    apply(clean, `Applied ${n} settings`);
-    setPaste("");
-  };
 
   const names = Object.keys(presets);
   return (
     <div className="presetbar">
       <hr className="section" />
-      <div className="rev-head">Presets</div>
-      {names.length > 0 && (
-        <div className="preset-list">
-          {names.map((n) => (
-            <div className="preset-row" key={n}>
-              <button className="preset-name" onClick={() => apply(presets[n], `Loaded “${n}”`)}>
-                {n}
-              </button>
-              <button className="preset-x" onClick={() => del(n)} title="Delete">
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="preset-save">
-        <input
-          className="preset-input"
-          placeholder="preset name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && save()}
-        />
-        <button className="btn" onClick={save}>
-          Save current
-        </button>
-      </div>
-      <textarea
-        className="preset-paste"
-        placeholder="Paste settings JSON…"
-        value={paste}
-        onChange={(e) => setPaste(e.target.value)}
-      />
-      <button className="btn" onClick={applyPaste}>
-        Apply pasted
+      <button className="rev-head rev-head-btn" onClick={() => setOpen((o) => !o)}>
+        <span>Presets</span>
+        <span className="rev-caret">{open ? "▾" : "▸"}</span>
       </button>
-      {msg && <div className="preset-msg">{msg}</div>}
+      {open && (
+        <>
+          {names.length > 0 && (
+            <div className="preset-list">
+              {names.map((n) => (
+                <div className="preset-row" key={n}>
+                  <button className="preset-name" onClick={() => apply(presets[n], `Loaded “${n}”`)}>
+                    {n}
+                  </button>
+                  <button className="preset-x" onClick={() => del(n)} title="Delete">
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="preset-save">
+            <input
+              className="preset-input"
+              placeholder="preset name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && save()}
+            />
+            <button className="btn" onClick={save}>
+              Save current
+            </button>
+          </div>
+          {msg && <div className="preset-msg">{msg}</div>}
+        </>
+      )}
     </div>
   );
 }

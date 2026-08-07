@@ -167,9 +167,6 @@ export function Onboarding({ onClose }: { onClose: () => void }) {
           </Step>
         </div>
 
-        <p className="ob-outro">
-          That's the whole Simple flow. <b>Pick → nudge → play.</b> Have fun with it.
-        </p>
         <button className="btn primary ob-done" onClick={onClose}>
           Got it — let's go
         </button>

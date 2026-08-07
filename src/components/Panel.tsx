@@ -105,7 +105,6 @@ export function Panel({
   onPlaceOrigin,
   placing,
 }: PanelProps) {
-  const [copied, setCopied] = useState(false);
   // Simple | Pro mode — Simple shows a guided subset, Pro the full panel. Persisted, default Simple.
   const [mode, setMode] = useState<"simple" | "pro">(() => {
     try {
@@ -120,33 +119,6 @@ export function Panel({
       localStorage.setItem("dwm-mode", m);
     } catch {
       /* storage blocked — mode just won't persist */
-    }
-  };
-
-  const copySettings = async () => {
-    const text = JSON.stringify(cfg, null, 2);
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(text);
-      ok = true;
-    } catch {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch {
-        ok = false;
-      }
-    }
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
     }
   };
 
@@ -283,6 +255,7 @@ export function Panel({
           >
             ⟲ Reset dots (density &amp; size)
           </button>
+          <PresetBar cfg={cfg} onApply={update} onReplay={onReplay} />
         </div>
       ) : (
         <>
@@ -925,9 +898,6 @@ export function Panel({
       </button>
       <button className={recording ? "btn rec" : "btn"} onClick={onRecord}>
         {recording ? "■ Stop & save .webm" : "● Record reveal"}
-      </button>
-      <button className="btn" onClick={copySettings}>
-        {copied ? "Copied!" : "Copy settings"}
       </button>
 
       <PresetBar cfg={cfg} onApply={update} onReplay={onReplay} />
